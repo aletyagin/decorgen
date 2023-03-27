@@ -2,10 +2,9 @@ package cmd
 
 import (
 	"github.com/aletyagin/decorgen/command/tracing"
+	"github.com/spf13/cobra"
 	"log"
 	"os"
-
-	"github.com/spf13/cobra"
 )
 
 // tracingCmd represents the tracing command
