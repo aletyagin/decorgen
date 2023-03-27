@@ -90,6 +90,37 @@ func Run(source string, destination io.Writer, decorName string, packageName str
 				continue
 			}
 
+			var interfaceName ast.Expr
+			if packageName != interfaceNode.Name.Name {
+				interfaceName = &ast.SelectorExpr{
+					X:   interfaceNode.Name,
+					Sel: ast.NewIdent(currType.Name.Name),
+				}
+				importDecl.Specs = append(
+					importDecl.Specs,
+					&ast.ImportSpec{
+						Name: interfaceNode.Name,
+						Path: stringLit("github.com/aletyagin/decorgen/test"),
+					},
+				)
+
+			} else {
+				interfaceName = ast.NewIdent(currType.Name.Name)
+			}
+
+			structFields := &ast.FieldList{
+				List: []*ast.Field{
+					{
+						Names: []*ast.Ident{{Name: "origin"}},
+						Type:  parameterizedType(interfaceName, currType),
+					},
+					{
+						Names: []*ast.Ident{{Name: "tracerName"}},
+						Type:  ast.NewIdent("string"),
+					},
+				},
+			}
+
 			decorNode.Decls = append(
 				decorNode.Decls,
 
@@ -101,18 +132,7 @@ func Run(source string, destination io.Writer, decorName string, packageName str
 							Name:       ast.NewIdent(decorName),
 							TypeParams: currType.TypeParams,
 							Type: &ast.StructType{
-								Fields: &ast.FieldList{
-									List: []*ast.Field{
-										{
-											Names: []*ast.Ident{{Name: "origin"}},
-											Type:  parameterizedType(currType.Name.Name, currType),
-										},
-										{
-											Names: []*ast.Ident{{Name: "tracerName"}},
-											Type:  ast.NewIdent("string"),
-										},
-									},
-								},
+								Fields: structFields,
 							},
 						},
 					},
@@ -122,18 +142,7 @@ func Run(source string, destination io.Writer, decorName string, packageName str
 				&ast.FuncDecl{
 					Name: ast.NewIdent(fmt.Sprintf("New%s", decorName)),
 					Type: &ast.FuncType{
-						Params: &ast.FieldList{
-							List: []*ast.Field{
-								{
-									Names: []*ast.Ident{{Name: "origin"}},
-									Type:  parameterizedType(currType.Name.Name, currType),
-								},
-								{
-									Names: []*ast.Ident{{Name: "tracerName"}},
-									Type:  ast.NewIdent("string"),
-								},
-							},
-						},
+						Params: structFields,
 						Results: &ast.FieldList{
 							List: []*ast.Field{
 								{
@@ -204,7 +213,7 @@ func Run(source string, destination io.Writer, decorName string, packageName str
 									{
 										Names: []*ast.Ident{{Name: "d"}},
 										Type: &ast.StarExpr{
-											X: parameterizedType(decorName, currType),
+											X: parameterizedType(ast.NewIdent(decorName), currType),
 										},
 									},
 								},
@@ -222,7 +231,7 @@ func Run(source string, destination io.Writer, decorName string, packageName str
 	return printer.Fprint(destination, token.NewFileSet(), decorNode)
 }
 
-func parameterizedType(typeName string, currType *ast.TypeSpec) ast.Expr {
+func parameterizedType(typeName ast.Expr, currType *ast.TypeSpec) ast.Expr {
 	if currType.TypeParams != nil {
 		types := make([]ast.Expr, 0)
 		for _, field := range currType.TypeParams.List {
@@ -236,18 +245,18 @@ func parameterizedType(typeName string, currType *ast.TypeSpec) ast.Expr {
 
 		if len(types) == 1 {
 			return &ast.IndexExpr{
-				X:     &ast.Ident{Name: typeName},
+				X:     typeName,
 				Index: types[0],
 			}
 		}
 
 		return &ast.IndexListExpr{
-			X:       &ast.Ident{Name: typeName},
+			X:       typeName,
 			Indices: types,
 		}
 	}
 
-	return &ast.Ident{Name: typeName}
+	return typeName
 }
 
 func funcBody(method *ast.Field) *ast.BlockStmt {
