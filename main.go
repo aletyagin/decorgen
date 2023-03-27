@@ -1,6 +1,6 @@
 package main
 
-import "decorgen/cmd"
+import "github.com/aletyagin/decorgen/cmd"
 
 func main() {
 	cmd.Execute()

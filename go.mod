@@ -1,4 +1,4 @@
-module decorgen
+module github.com/aletyagin/decorgen
 
 go 1.19
 

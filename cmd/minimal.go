@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"decorgen/command/minimal"
+	"github.com/aletyagin/decorgen/command/minimal"
 	"log"
 	"os"
 

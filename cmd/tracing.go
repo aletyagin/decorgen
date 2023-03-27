@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"decorgen/command/tracing"
+	"github.com/aletyagin/decorgen/command/tracing"
 	"log"
 	"os"
 
